@@ -25,6 +25,7 @@ services:
     container_name: storywriter-frontend
     networks:
       - storywriter-net
+      - nginx-proxy-nw
     ports:
       - "${FRONTEND_PORT:-8080}:80"
     depends_on:
@@ -34,3 +35,7 @@ services:
 networks:
   storywriter-net:
     driver: bridge
+  nginx-proxy-nw:
+    external: true
+
+  
