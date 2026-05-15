@@ -4,29 +4,30 @@ from fastapi.responses import StreamingResponse
 import json
 
 from app.database import get_db
-from app.models import Story, StorySegment, Settings, SteeringInstruction
+from app.models import Story, StorySegment, Settings, SteeringInstruction, User
 from app.schemas import GenerateRequest, StorySegmentOut
 from app.services.llm_service import LLMService
 from app.services.context_manager import ContextManager
+from app.routers.auth import get_current_user
 
 router = APIRouter(prefix="/generate", tags=["generation"])
 
-def get_or_create_settings(db: Session) -> Settings:
-    settings = db.query(Settings).first()
+def get_or_create_settings(db: Session, user_id: int) -> Settings:
+    settings = db.query(Settings).filter(Settings.user_id == user_id).first()
     if not settings:
-        settings = Settings()
+        settings = Settings(user_id=user_id)
         db.add(settings)
         db.commit()
         db.refresh(settings)
     return settings
 
 @router.post("/")
-async def generate_story_chunk(req: GenerateRequest, db: Session = Depends(get_db)):
-    story = db.query(Story).filter(Story.id == req.story_id).first()
+async def generate_story_chunk(req: GenerateRequest, db: Session = Depends(get_db), current_user: User = Depends(get_current_user)):
+    story = db.query(Story).filter(Story.id == req.story_id, Story.user_id == current_user.id).first()
     if not story:
         raise HTTPException(status_code=404, detail="Story not found")
     
-    settings = get_or_create_settings(db)
+    settings = get_or_create_settings(db, current_user.id)
     if not settings.api_key:
         raise HTTPException(status_code=400, detail="API key not configured. Please set it in Settings.")
     
@@ -128,12 +129,12 @@ async def generate_story_chunk(req: GenerateRequest, db: Session = Depends(get_d
     return StreamingResponse(stream_generator(), media_type="text/event-stream")
 
 @router.post("/summarize")
-async def summarize_story(story_id: int, db: Session = Depends(get_db)):
-    story = db.query(Story).filter(Story.id == story_id).first()
+async def summarize_story(story_id: int, db: Session = Depends(get_db), current_user: User = Depends(get_current_user)):
+    story = db.query(Story).filter(Story.id == story_id, Story.user_id == current_user.id).first()
     if not story:
         raise HTTPException(status_code=404, detail="Story not found")
     
-    settings = get_or_create_settings(db)
+    settings = get_or_create_settings(db, current_user.id)
     segments = db.query(StorySegment).filter(
         StorySegment.story_id == story.id
     ).order_by(StorySegment.order_index).all()

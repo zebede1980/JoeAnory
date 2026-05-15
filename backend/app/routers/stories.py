@@ -3,33 +3,34 @@ from sqlalchemy.orm import Session
 from typing import List
 
 from app.database import get_db
-from app.models import Story, StorySegment, StoryCard, CharacterCard
+from app.models import Story, StorySegment, StoryCard, CharacterCard, User
 from app.schemas import StoryCreate, StoryOut, StoryDetailOut, StorySegmentOut, StoryCardOut, EditSegmentRequest
+from app.routers.auth import get_current_user
 
 router = APIRouter(prefix="/stories", tags=["stories"])
 
 @router.post("/", response_model=StoryOut)
-def create_story(story: StoryCreate, db: Session = Depends(get_db)):
-    db_story = Story(title=story.title, synopsis=story.synopsis)
+def create_story(story: StoryCreate, db: Session = Depends(get_db), current_user: User = Depends(get_current_user)):
+    db_story = Story(user_id=current_user.id, title=story.title, synopsis=story.synopsis)
     db.add(db_story)
     db.commit()
     db.refresh(db_story)
     return db_story
 
 @router.get("/", response_model=List[StoryOut])
-def list_stories(db: Session = Depends(get_db)):
-    return db.query(Story).order_by(Story.updated_at.desc()).all()
+def list_stories(db: Session = Depends(get_db), current_user: User = Depends(get_current_user)):
+    return db.query(Story).filter(Story.user_id == current_user.id).order_by(Story.updated_at.desc()).all()
 
 @router.get("/{story_id}", response_model=StoryDetailOut)
-def get_story(story_id: int, db: Session = Depends(get_db)):
-    story = db.query(Story).filter(Story.id == story_id).first()
+def get_story(story_id: int, db: Session = Depends(get_db), current_user: User = Depends(get_current_user)):
+    story = db.query(Story).filter(Story.id == story_id, Story.user_id == current_user.id).first()
     if not story:
         raise HTTPException(status_code=404, detail="Story not found")
     return story
 
 @router.put("/{story_id}", response_model=StoryOut)
-def update_story(story_id: int, story_update: StoryCreate, db: Session = Depends(get_db)):
-    story = db.query(Story).filter(Story.id == story_id).first()
+def update_story(story_id: int, story_update: StoryCreate, db: Session = Depends(get_db), current_user: User = Depends(get_current_user)):
+    story = db.query(Story).filter(Story.id == story_id, Story.user_id == current_user.id).first()
     if not story:
         raise HTTPException(status_code=404, detail="Story not found")
     story.title = story_update.title
@@ -39,8 +40,8 @@ def update_story(story_id: int, story_update: StoryCreate, db: Session = Depends
     return story
 
 @router.delete("/{story_id}")
-def delete_story(story_id: int, db: Session = Depends(get_db)):
-    story = db.query(Story).filter(Story.id == story_id).first()
+def delete_story(story_id: int, db: Session = Depends(get_db), current_user: User = Depends(get_current_user)):
+    story = db.query(Story).filter(Story.id == story_id, Story.user_id == current_user.id).first()
     if not story:
         raise HTTPException(status_code=404, detail="Story not found")
     db.delete(story)
@@ -48,11 +49,11 @@ def delete_story(story_id: int, db: Session = Depends(get_db)):
     return {"detail": "Story deleted"}
 
 @router.post("/{story_id}/cards/{card_id}", response_model=StoryCardOut)
-def attach_card(story_id: int, card_id: int, db: Session = Depends(get_db)):
-    story = db.query(Story).filter(Story.id == story_id).first()
+def attach_card(story_id: int, card_id: int, db: Session = Depends(get_db), current_user: User = Depends(get_current_user)):
+    story = db.query(Story).filter(Story.id == story_id, Story.user_id == current_user.id).first()
     if not story:
         raise HTTPException(status_code=404, detail="Story not found")
-    card = db.query(CharacterCard).filter(CharacterCard.id == card_id).first()
+    card = db.query(CharacterCard).filter(CharacterCard.id == card_id, CharacterCard.user_id == current_user.id).first()
     if not card:
         raise HTTPException(status_code=404, detail="Card not found")
     
@@ -70,7 +71,10 @@ def attach_card(story_id: int, card_id: int, db: Session = Depends(get_db)):
     return sc
 
 @router.delete("/{story_id}/cards/{card_id}")
-def detach_card(story_id: int, card_id: int, db: Session = Depends(get_db)):
+def detach_card(story_id: int, card_id: int, db: Session = Depends(get_db), current_user: User = Depends(get_current_user)):
+    story = db.query(Story).filter(Story.id == story_id, Story.user_id == current_user.id).first()
+    if not story:
+        raise HTTPException(status_code=404, detail="Story not found")
     sc = db.query(StoryCard).filter(
         StoryCard.story_id == story_id,
         StoryCard.card_id == card_id
@@ -82,8 +86,8 @@ def detach_card(story_id: int, card_id: int, db: Session = Depends(get_db)):
     return {"detail": "Card detached"}
 
 @router.post("/{story_id}/segments", response_model=StorySegmentOut)
-def add_segment(story_id: int, content: str, db: Session = Depends(get_db)):
-    story = db.query(Story).filter(Story.id == story_id).first()
+def add_segment(story_id: int, content: str, db: Session = Depends(get_db), current_user: User = Depends(get_current_user)):
+    story = db.query(Story).filter(Story.id == story_id, Story.user_id == current_user.id).first()
     if not story:
         raise HTTPException(status_code=404, detail="Story not found")
     
@@ -98,7 +102,10 @@ def add_segment(story_id: int, content: str, db: Session = Depends(get_db)):
     return seg
 
 @router.put("/{story_id}/segments/{segment_id}", response_model=StorySegmentOut)
-def edit_segment(story_id: int, segment_id: int, req: EditSegmentRequest, db: Session = Depends(get_db)):
+def edit_segment(story_id: int, segment_id: int, req: EditSegmentRequest, db: Session = Depends(get_db), current_user: User = Depends(get_current_user)):
+    story = db.query(Story).filter(Story.id == story_id, Story.user_id == current_user.id).first()
+    if not story:
+        raise HTTPException(status_code=404, detail="Story not found")
     seg = db.query(StorySegment).filter(
         StorySegment.id == segment_id,
         StorySegment.story_id == story_id
@@ -111,7 +118,10 @@ def edit_segment(story_id: int, segment_id: int, req: EditSegmentRequest, db: Se
     return seg
 
 @router.delete("/{story_id}/segments/{segment_id}")
-def delete_segment(story_id: int, segment_id: int, db: Session = Depends(get_db)):
+def delete_segment(story_id: int, segment_id: int, db: Session = Depends(get_db), current_user: User = Depends(get_current_user)):
+    story = db.query(Story).filter(Story.id == story_id, Story.user_id == current_user.id).first()
+    if not story:
+        raise HTTPException(status_code=404, detail="Story not found")
     seg = db.query(StorySegment).filter(
         StorySegment.id == segment_id,
         StorySegment.story_id == story_id

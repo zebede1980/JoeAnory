@@ -10,9 +10,17 @@ engine = create_engine(DATABASE_URL, connect_args={"check_same_thread": False} i
 SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
 Base = declarative_base()
 
+class User(Base):
+    __tablename__ = "users"
+    id = Column(Integer, primary_key=True, index=True)
+    username = Column(String, unique=True, nullable=False, index=True)
+    password = Column(String, nullable=False)
+    created_at = Column(DateTime, default=datetime.utcnow)
+
 class CharacterCard(Base):
     __tablename__ = "character_cards"
     id = Column(Integer, primary_key=True, index=True)
+    user_id = Column(Integer, ForeignKey("users.id"), nullable=False)
     name = Column(String, nullable=False)
     description = Column(Text, default="")
     personality = Column(Text, default="")
@@ -33,6 +41,7 @@ class CharacterCard(Base):
 class Story(Base):
     __tablename__ = "stories"
     id = Column(Integer, primary_key=True, index=True)
+    user_id = Column(Integer, ForeignKey("users.id"), nullable=False)
     title = Column(String, nullable=False)
     synopsis = Column(Text, default="")
     created_at = Column(DateTime, default=datetime.utcnow)
@@ -62,6 +71,7 @@ class StorySegment(Base):
 class Settings(Base):
     __tablename__ = "settings"
     id = Column(Integer, primary_key=True, index=True)
+    user_id = Column(Integer, ForeignKey("users.id"), nullable=False, unique=True)
     api_base_url = Column(Text, default="https://api.openai.com/v1")
     api_key = Column(Text, default="")
     model = Column(Text, default="gpt-4o")

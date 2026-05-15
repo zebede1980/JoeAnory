@@ -6,9 +6,10 @@ import shutil
 import uuid
 
 from app.database import get_db
-from app.models import CharacterCard
+from app.models import CharacterCard, User
 from app.schemas import CharacterCardOut
 from app.services.card_parser import parse_card
+from app.routers.auth import get_current_user
 
 router = APIRouter(prefix="/cards", tags=["cards"])
 
@@ -16,7 +17,7 @@ UPLOAD_DIR = "uploads/cards"
 os.makedirs(UPLOAD_DIR, exist_ok=True)
 
 @router.post("/upload", response_model=CharacterCardOut)
-async def upload_card(file: UploadFile = File(...), db: Session = Depends(get_db)):
+async def upload_card(file: UploadFile = File(...), db: Session = Depends(get_db), current_user: User = Depends(get_current_user)):
     if not file.content_type or not file.content_type.startswith("image/"):
         raise HTTPException(status_code=400, detail="File must be an image")
     
@@ -33,6 +34,7 @@ async def upload_card(file: UploadFile = File(...), db: Session = Depends(get_db
         f.write(contents)
     
     card = CharacterCard(
+        user_id=current_user.id,
         name=parsed["name"],
         description=parsed["description"],
         personality=parsed["personality"],
@@ -55,19 +57,19 @@ async def upload_card(file: UploadFile = File(...), db: Session = Depends(get_db
     return card
 
 @router.get("/", response_model=List[CharacterCardOut])
-def list_cards(db: Session = Depends(get_db)):
-    return db.query(CharacterCard).order_by(CharacterCard.created_at.desc()).all()
+def list_cards(db: Session = Depends(get_db), current_user: User = Depends(get_current_user)):
+    return db.query(CharacterCard).filter(CharacterCard.user_id == current_user.id).order_by(CharacterCard.created_at.desc()).all()
 
 @router.get("/{card_id}", response_model=CharacterCardOut)
-def get_card(card_id: int, db: Session = Depends(get_db)):
-    card = db.query(CharacterCard).filter(CharacterCard.id == card_id).first()
+def get_card(card_id: int, db: Session = Depends(get_db), current_user: User = Depends(get_current_user)):
+    card = db.query(CharacterCard).filter(CharacterCard.id == card_id, CharacterCard.user_id == current_user.id).first()
     if not card:
         raise HTTPException(status_code=404, detail="Card not found")
     return card
 
 @router.delete("/{card_id}")
-def delete_card(card_id: int, db: Session = Depends(get_db)):
-    card = db.query(CharacterCard).filter(CharacterCard.id == card_id).first()
+def delete_card(card_id: int, db: Session = Depends(get_db), current_user: User = Depends(get_current_user)):
+    card = db.query(CharacterCard).filter(CharacterCard.id == card_id, CharacterCard.user_id == current_user.id).first()
     if not card:
         raise HTTPException(status_code=404, detail="Card not found")
     if card.image_path and os.path.exists(card.image_path):

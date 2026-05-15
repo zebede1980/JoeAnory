@@ -12,9 +12,11 @@ const styles = {
   deleteBtn: { background: 'transparent', border: 'none', color: '#e94560', cursor: 'pointer', fontSize: 16, padding: '0 4px' },
   newBtn: { margin: 8, padding: 10, border: 'none', borderRadius: 6, background: '#e94560', color: '#fff', cursor: 'pointer', fontWeight: 600 },
   empty: { padding: 16, textAlign: 'center', color: '#888', fontSize: 13 },
+  footer: { padding: 12, borderTop: '1px solid #0f3460', display: 'flex', gap: 8 },
+  footerBtn: { flex: 1, padding: '8px 0', border: 'none', borderRadius: 6, cursor: 'pointer', background: '#0f3460', color: '#fff', fontSize: 12, fontWeight: 500 },
 };
 
-export default function Sidebar({ view, setView, activeStoryId, setActiveStoryId }) {
+export default function Sidebar({ view, setView, activeStoryId, setActiveStoryId, onLogout }) {
   const [stories, setStories] = useState([]);
 
   const loadStories = async () => {
@@ -69,6 +71,9 @@ export default function Sidebar({ view, setView, activeStoryId, setActiveStoryId
           </div>
         </>
       )}
+      <div style={styles.footer}>
+        <button style={styles.footerBtn} onClick={onLogout}>Logout</button>
+      </div>
     </div>
   );
 }

@@ -5,6 +5,18 @@ const API = axios.create({
   headers: { 'Content-Type': 'application/json' },
 });
 
+API.interceptors.request.use((config) => {
+  const token = localStorage.getItem('token');
+  if (token) {
+    config.headers.Authorization = `Bearer ${token}`;
+  }
+  return config;
+});
+
+export const register = (username, password) => API.post('/auth/register', null, { params: { username, password } });
+export const login = (username, password) => API.post('/auth/login', null, { params: { username, password } });
+export const me = () => API.get('/auth/me');
+
 export const getCards = () => API.get('/cards/');
 export const uploadCard = (formData) => API.post('/cards/upload', formData, { headers: { 'Content-Type': 'multipart/form-data' } });
 export const deleteCard = (id) => API.delete(`/cards/${id}`);
@@ -24,9 +36,13 @@ export const getSettings = () => API.get('/settings/');
 export const updateSettings = (data) => API.put('/settings/', data);
 
 export const generateChunk = (storyId, steering) => {
+  const token = localStorage.getItem('token');
   return fetch('/api/generate/', {
     method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
+    headers: {
+      'Content-Type': 'application/json',
+      ...(token ? { 'Authorization': `Bearer ${token}` } : {}),
+    },
     body: JSON.stringify({ story_id: storyId, steering }),
   });
 };
