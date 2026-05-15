@@ -240,9 +240,7 @@ export default function StoryWorkspace({ storyId, setActiveStoryId }) {
             )}
           </div>
         ))}
-        {streamingContent && (
-          {renderParagraphs(streamingContent, styles.streamingText)}
-        )}
+        {streamingContent && renderParagraphs(streamingContent, styles.streamingText)}
       </div>
 
       <div style={styles.controls}>
