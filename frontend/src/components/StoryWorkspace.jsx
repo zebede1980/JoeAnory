@@ -11,7 +11,8 @@ const styles = {
   storyArea: { flex: 1, overflowY: 'auto', padding: 20, background: '#1a1a2e' },
   segment: { marginBottom: 16, padding: 14, background: '#16213e', borderRadius: 8, borderLeft: '3px solid #e94560', position: 'relative' },
   summarySegment: { borderLeftColor: '#f9a825', opacity: 0.85 },
-  segmentContent: { fontSize: 15, lineHeight: 1.7, color: '#e0e0e0', whiteSpace: 'pre-wrap' },
+  segmentContent: { fontSize: 15, lineHeight: 1.7, color: '#e0e0e0' },
+  segmentParagraph: { margin: '0 0 1em 0' },
   segmentActions: { display: 'flex', gap: 8, marginTop: 8, justifyContent: 'flex-end' },
   segBtn: { padding: '4px 10px', border: 'none', borderRadius: 4, cursor: 'pointer', fontSize: 12, background: '#0f3460', color: '#fff' },
   editTextarea: { width: '100%', minHeight: 120, background: '#0f3460', border: '1px solid #e94560', borderRadius: 6, padding: 10, color: '#fff', fontSize: 14, fontFamily: 'inherit' },
@@ -20,7 +21,7 @@ const styles = {
   steeringInput: { flex: 1, background: '#0f3460', border: '1px solid #1a1a2e', borderRadius: 6, padding: '10px 12px', color: '#fff', fontSize: 14 },
   genBtn: { padding: '10px 20px', border: 'none', borderRadius: 6, background: '#e94560', color: '#fff', cursor: 'pointer', fontWeight: 600, fontSize: 14 },
   genBtnDisabled: { opacity: 0.5, cursor: 'not-allowed' },
-  streamingText: { padding: 14, background: '#0f3460', borderRadius: 8, fontSize: 15, lineHeight: 1.7, color: '#e0e0e0', whiteSpace: 'pre-wrap', minHeight: 60, border: '1px dashed #e94560' },
+  streamingText: { padding: 14, background: '#0f3460', borderRadius: 8, fontSize: 15, lineHeight: 1.7, color: '#e0e0e0', minHeight: 60, border: '1px dashed #e94560' },
   cardsRow: { display: 'flex', gap: 8, alignItems: 'center', flexWrap: 'wrap' },
   cardTag: { padding: '4px 10px', background: '#0f3460', borderRadius: 12, fontSize: 12, display: 'flex', alignItems: 'center', gap: 6 },
   cardRemove: { background: 'transparent', border: 'none', color: '#e94560', cursor: 'pointer', fontSize: 14 },
@@ -37,6 +38,18 @@ export default function StoryWorkspace({ storyId, setActiveStoryId }) {
   const [editingSegmentId, setEditingSegmentId] = useState(null);
   const [editContent, setEditContent] = useState('');
   const storyAreaRef = useRef(null);
+
+  const renderParagraphs = (text, containerStyle) => {
+    const paragraphs = text.split(/\n{2,}/).map(p => p.trim()).filter(Boolean);
+    if (paragraphs.length === 0) return <div style={containerStyle}>{text}</div>;
+    return (
+      <div style={containerStyle}>
+        {paragraphs.map((p, i) => (
+          <p key={i} style={styles.segmentParagraph}>{p.replace(/\n/g, ' ')}</p>
+        ))}
+      </div>
+    );
+  };
 
   const loadStory = async () => {
     if (!storyId) return;
@@ -216,7 +229,7 @@ export default function StoryWorkspace({ storyId, setActiveStoryId }) {
               </>
             ) : (
               <>
-                <div style={styles.segmentContent}>{seg.content}</div>
+                {renderParagraphs(seg.content, styles.segmentContent)}
                 {!seg.is_summary && (
                   <div style={styles.segmentActions}>
                     <button style={styles.segBtn} onClick={() => handleEditSegment(seg)}>Edit</button>
@@ -228,7 +241,7 @@ export default function StoryWorkspace({ storyId, setActiveStoryId }) {
           </div>
         ))}
         {streamingContent && (
-          <div style={styles.streamingText}>{streamingContent}</div>
+          {renderParagraphs(streamingContent, styles.streamingText)}
         )}
       </div>
 

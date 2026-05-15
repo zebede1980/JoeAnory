@@ -74,6 +74,9 @@ class ContextManager:
         system_parts.append(
             "You are a creative story writer. Continue the story from where it left off. "
             "Write a substantial, well-developed next section of the story. "
+            "Format your output as flowing prose: use standard paragraph breaks (one blank line between paragraphs). "
+            "Do not use bullet points, numbered lists, headers, bold text, or any other special formatting. "
+            "Keep paragraphs dense and readable — avoid single-sentence paragraphs or excessive line breaks. "
             "Do not include meta-commentary, do not acknowledge the user or instructions, "
             "and do not include the steering notes in the story text. "
             "Only output the next part of the narrative."
