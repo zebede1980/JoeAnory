@@ -13,8 +13,8 @@ API.interceptors.request.use((config) => {
   return config;
 });
 
-export const register = (username, password) => API.post('/auth/register', null, { params: { username, password } });
-export const login = (username, password) => API.post('/auth/login', null, { params: { username, password } });
+export const register = (username, password) => API.post('/auth/register', { username, password });
+export const login = (username, password) => API.post('/auth/login', { username, password });
 export const me = () => API.get('/auth/me');
 
 export const getCards = () => API.get('/cards/');

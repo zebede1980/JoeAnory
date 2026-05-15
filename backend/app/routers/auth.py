@@ -1,5 +1,6 @@
 from fastapi import APIRouter, Depends, HTTPException, Header
 from sqlalchemy.orm import Session
+from pydantic import BaseModel
 import bcrypt
 from jose import jwt, JWTError
 from datetime import datetime, timedelta
@@ -7,6 +8,10 @@ import os
 
 from app.database import get_db
 from app.models import User
+
+class AuthRequest(BaseModel):
+    username: str
+    password: str
 
 router = APIRouter(prefix="/auth", tags=["auth"])
 
@@ -45,11 +50,11 @@ def get_current_user(authorization: str = Header(None), db: Session = Depends(ge
     return user
 
 @router.post("/register")
-def register(username: str, password: str, db: Session = Depends(get_db)):
-    existing = db.query(User).filter(User.username == username).first()
+def register(body: AuthRequest, db: Session = Depends(get_db)):
+    existing = db.query(User).filter(User.username == body.username).first()
     if existing:
         raise HTTPException(status_code=400, detail="Username already taken")
-    user = User(username=username, password=hash_password(password))
+    user = User(username=body.username, password=hash_password(body.password))
     db.add(user)
     db.commit()
     db.refresh(user)
@@ -57,9 +62,9 @@ def register(username: str, password: str, db: Session = Depends(get_db)):
     return {"token": token, "user_id": user.id, "username": user.username}
 
 @router.post("/login")
-def login(username: str, password: str, db: Session = Depends(get_db)):
-    user = db.query(User).filter(User.username == username).first()
-    if not user or not verify_password(password, user.password):
+def login(body: AuthRequest, db: Session = Depends(get_db)):
+    user = db.query(User).filter(User.username == body.username).first()
+    if not user or not verify_password(body.password, user.password):
         raise HTTPException(status_code=401, detail="Invalid username or password")
     token = create_access_token(user.id)
     return {"token": token, "user_id": user.id, "username": user.username}
