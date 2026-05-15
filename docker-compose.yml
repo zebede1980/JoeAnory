@@ -6,13 +6,15 @@ services:
       context: ./backend
       dockerfile: Dockerfile
     container_name: storywriter-backend
+    networks:
+      - storywriter-net
     volumes:
       - ./data:/app/data
       - ./uploads:/app/uploads
     environment:
       - DATABASE_URL=sqlite:///./data/storywriter.db
-    ports:
-      - "8000:8000"
+    expose:
+      - "8000"
     restart: unless-stopped
 
   frontend:
@@ -20,8 +22,14 @@ services:
       context: .
       dockerfile: frontend/Dockerfile
     container_name: storywriter-frontend
+    networks:
+      - storywriter-net
     ports:
-      - "80:80"
+      - "${FRONTEND_PORT:-8080}:80"
     depends_on:
       - backend
     restart: unless-stopped
+
+networks:
+  storywriter-net:
+    driver: bridge
