@@ -51,6 +51,8 @@ def get_current_user(authorization: str = Header(None), db: Session = Depends(ge
 
 @router.post("/register")
 def register(body: AuthRequest, db: Session = Depends(get_db)):
+    if os.getenv("ALLOW_REGISTRATION", "false").lower() != "true":
+        raise HTTPException(status_code=403, detail="Registrations are currently closed")
     existing = db.query(User).filter(User.username == body.username).first()
     if existing:
         raise HTTPException(status_code=400, detail="Username already taken")
