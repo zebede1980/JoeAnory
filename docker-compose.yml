@@ -11,7 +11,7 @@ services:
       - ./uploads:/app/uploads
     environment:
       - DATABASE_URL=sqlite:///./data/storywriter.db
-      - SECRET_KEY=CHANGE_THIS_TO_A_LONG_RANDOM_STRING
+      - SECRET_KEY=${SECRET_KEY}
       - ALLOW_REGISTRATION=${ALLOW_REGISTRATION:-false}
     expose:
       - "8000"
