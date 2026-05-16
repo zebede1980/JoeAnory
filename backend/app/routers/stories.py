@@ -14,6 +14,15 @@ def create_story(story: StoryCreate, db: Session = Depends(get_db), current_user
     db_story = Story(user_id=current_user.id, title=story.title, synopsis=story.synopsis)
     db.add(db_story)
     db.commit()
+    
+    if story.card_ids:
+        for card_id in story.card_ids:
+            card = db.query(CharacterCard).filter(CharacterCard.id == card_id, CharacterCard.user_id == current_user.id).first()
+            if card:
+                sc = StoryCard(story_id=db_story.id, card_id=card.id)
+                db.add(sc)
+        db.commit()
+        
     db.refresh(db_story)
     return db_story
 
@@ -35,6 +44,16 @@ def update_story(story_id: int, story_update: StoryCreate, db: Session = Depends
         raise HTTPException(status_code=404, detail="Story not found")
     story.title = story_update.title
     story.synopsis = story_update.synopsis
+    
+    if story_update.card_ids:
+        for card_id in story_update.card_ids:
+            existing = db.query(StoryCard).filter(StoryCard.story_id == story.id, StoryCard.card_id == card_id).first()
+            if not existing:
+                card = db.query(CharacterCard).filter(CharacterCard.id == card_id, CharacterCard.user_id == current_user.id).first()
+                if card:
+                    sc = StoryCard(story_id=story.id, card_id=card.id)
+                    db.add(sc)
+                    
     db.commit()
     db.refresh(story)
     return story

@@ -29,6 +29,7 @@ class CharacterCardOut(CharacterCardCreate):
 class StoryCreate(BaseModel):
     title: str
     synopsis: str = ""
+    card_ids: Optional[List[int]] = []
 
 class StoryOut(BaseModel):
     id: int

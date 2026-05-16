@@ -195,14 +195,17 @@ export default function StoryWorkspace({ storyId, setActiveStoryId }) {
               <button style={styles.cardRemove} onClick={() => handleDetachCard(sc.card_id)}>×</button>
             </span>
           ))}
-          {availableCards.length > 0 && (
-            <select style={styles.addCardSelect} value="" onChange={handleAttachCard}>
-              <option value="">+ Add card</option>
-              {availableCards.map(c => (
-                <option key={c.id} value={c.id}>{c.name}</option>
-              ))}
-            </select>
-          )}
+          <select 
+            style={styles.addCardSelect} 
+            value="" 
+            onChange={handleAttachCard}
+            disabled={availableCards.length === 0}
+          >
+            <option value="">{availableCards.length > 0 ? '+ Add card' : 'No more cards available'}</option>
+            {availableCards.map(c => (
+              <option key={c.id} value={c.id}>{c.name}</option>
+            ))}
+          </select>
         </div>
       </div>
 
